@@ -54,7 +54,7 @@ func NewTextFileCollector() (Collector, error) {
 	if c.path == "" {
 		// This collector is enabled by default, so do not fail if
 		// the flag is not passed.
-		log.Infof("No directory specified, see --textfile.directory")
+		log.Infof("No directory specified, see --collector.textfile.directory")
 	} else {
 		prometheus.SetMetricFamilyInjectionHook(c.parseTextFiles)
 	}
@@ -128,7 +128,7 @@ func (c *textFileCollector) parseTextFiles() []*dto.MetricFamily {
 			mtimeMetricFamily.Metric = append(mtimeMetricFamily.Metric,
 				&dto.Metric{
 					Label: []*dto.LabelPair{
-						&dto.LabelPair{
+						{
 							Name:  proto.String("file"),
 							Value: proto.String(filename),
 						},
@@ -145,7 +145,7 @@ func (c *textFileCollector) parseTextFiles() []*dto.MetricFamily {
 		Help: proto.String("1 if there was an error opening or reading a file, 0 otherwise"),
 		Type: dto.MetricType_GAUGE.Enum(),
 		Metric: []*dto.Metric{
-			&dto.Metric{
+			{
 				Gauge: &dto.Gauge{Value: &error},
 			},
 		},
