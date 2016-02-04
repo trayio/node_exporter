@@ -55,6 +55,10 @@ func (c *processesCollector) Update(ch chan<- prometheus.Metric) error {
 		return fmt.Errorf("failed to get processes: %s", err)
 	}
 
+	for _, metric := range c.metrics {
+		metric.(*prometheus.GaugeVec).Reset()
+	}
+
 	for _, process := range processes {
 		cmd, err := process.Comm()
 		if err != nil {
