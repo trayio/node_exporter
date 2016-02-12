@@ -29,22 +29,12 @@ import (
 )
 
 const (
-	defaultCollectors = "conntrack,diskstats,entropy,filefd,filesystem,loadavg,mdadm,meminfo,netdev,netstat,sockstat,stat,textfile,time,uname,version,vmstat"
+	defaultCollectors = "conntrack,diskstats,entropy,filefd,filesystem,loadavg,mdadm,meminfo,netdev,netstat,sockstat,stat,textfile,time,uname,version,vmstat.processes"
 )
 
 var (
 	// Version of node_exporter. Set at build time.
 	Version = "0.0.0.dev"
-
-	memProfile        = flag.String("debug.memprofile-file", "", "Write memory profile to this file upon receipt of SIGUSR1.")
-	listenAddress     = flag.String("web.listen-address", ":9100", "Address on which to expose metrics and web interface.")
-	metricsPath       = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-	enabledCollectors = flag.String("collectors.enabled",
-		filterAvailableCollectors("conntrack,diskstats,entropy,filefd,filesystem,loadavg,mdadm,meminfo,netdev,netstat,sockstat,stat,textfile,time,uname,version,vmstat,processes"),
-		"Comma-separated list of collectors to use.")
-	printCollectors = flag.Bool("collectors.print", false, "If true, print available collectors and exit.")
-
-	collectorLabelNames = []string{"collector", "result"}
 
 	scrapeDurations = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
