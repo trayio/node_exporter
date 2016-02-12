@@ -80,7 +80,6 @@ BINARY   ?= $(TARGET)
 ARCHIVE  ?= $(TARGET)-$(VERSION).$(SUFFIX).tar.gz
 
 default: $(BINARY)
-staticbinary: $(STATICBINARY)
 
 $(BINARY): $(GOCC) $(SRC) $(DEPENDENCIES) Makefile Makefile.COMMON | $(SELFLINK)
 	cd $(SELFLINK) && CGO_ENABLED=0 $(GO) build $(GOFLAGS) -a --installsuffix cgo -o $(PWD)/$@
