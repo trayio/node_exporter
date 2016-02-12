@@ -25,11 +25,12 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/log"
-
 	"github.com/prometheus/node_exporter/collector"
 )
 
-const subsystem = "exporter"
+const (
+	defaultCollectors = "conntrack,diskstats,entropy,filefd,filesystem,loadavg,mdadm,meminfo,netdev,netstat,sockstat,stat,textfile,time,uname,version,vmstat"
+)
 
 var (
 	// Version of node_exporter. Set at build time.
@@ -48,11 +49,11 @@ var (
 	scrapeDurations = prometheus.NewSummaryVec(
 		prometheus.SummaryOpts{
 			Namespace: collector.Namespace,
-			Subsystem: subsystem,
+			Subsystem: "exporter",
 			Name:      "scrape_duration_seconds",
 			Help:      "node_exporter: Duration of a scrape job.",
 		},
-		collectorLabelNames,
+		[]string{"collector", "result"},
 	)
 )
 
@@ -107,9 +108,9 @@ func execute(name string, c collector.Collector, ch chan<- prometheus.Metric) {
 	scrapeDurations.WithLabelValues(name, result).Observe(duration.Seconds())
 }
 
-func loadCollectors() (map[string]collector.Collector, error) {
+func loadCollectors(list string) (map[string]collector.Collector, error) {
 	collectors := map[string]collector.Collector{}
-	for _, name := range strings.Split(*enabledCollectors, ",") {
+	for _, name := range strings.Split(list, ",") {
 		fn, ok := collector.Factories[name]
 		if !ok {
 			return nil, fmt.Errorf("collector '%s' not available", name)
@@ -124,6 +125,12 @@ func loadCollectors() (map[string]collector.Collector, error) {
 }
 
 func main() {
+	var (
+		listenAddress     = flag.String("web.listen-address", ":9100", "Address on which to expose metrics and web interface.")
+		metricsPath       = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+		enabledCollectors = flag.String("collectors.enabled", filterAvailableCollectors(defaultCollectors), "Comma-separated list of collectors to use.")
+		printCollectors   = flag.Bool("collectors.print", false, "If true, print available collectors and exit.")
+	)
 	flag.Parse()
 
 	if *printCollectors {
@@ -138,7 +145,7 @@ func main() {
 		}
 		return
 	}
-	collectors, err := loadCollectors()
+	collectors, err := loadCollectors(*enabledCollectors)
 	if err != nil {
 		log.Fatalf("Couldn't load collectors: %s", err)
 	}
