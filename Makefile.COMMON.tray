@@ -82,7 +82,7 @@ ARCHIVE  ?= $(TARGET)-$(VERSION).$(SUFFIX).tar.gz
 default: $(BINARY)
 
 $(BINARY): $(GOCC) $(SRC) $(DEPENDENCIES) Makefile Makefile.COMMON | $(SELFLINK)
-	cd $(SELFLINK) && CGO_ENABLED=0 $(GO) build $(GOFLAGS) -a --installsuffix cgo -o $(PWD)/$@
+	cd $(SELFLINK) && CGO_ENABLED=0 $(GO) build $(GOFLAGS) -a --installsuffix cgo -o $(CURDIR)/$@
 
 .PHONY: archive
 archive: $(ARCHIVE)
