@@ -15,7 +15,8 @@ const (
 )
 
 type processesCollector struct {
-	metrics []prometheus.Collector
+	// metrics     []prometheus.Collector
+	memory, cpu *prometheus.GaugeVec
 }
 
 func init() {
@@ -26,26 +27,44 @@ func NewProcessesCollector() (Collector, error) {
 	var processesLabelNames = []string{"process"}
 
 	return &processesCollector{
-		metrics: []prometheus.Collector{
-			prometheus.NewGaugeVec(
-				prometheus.GaugeOpts{
-					Namespace: Namespace,
-					Subsystem: processesSubsystem,
-					Name:      "memory_resident_usage_bytes",
-					Help:      "Resident memory size in bytes",
-				},
-				processesLabelNames,
-			),
-			prometheus.NewGaugeVec(
-				prometheus.GaugeOpts{
-					Namespace: Namespace,
-					Subsystem: processesSubsystem,
-					Name:      "cpu_usage_total_seconds",
-					Help:      "Total CPU user and system time in seconds",
-				},
-				processesLabelNames,
-			),
-		},
+		// metrics: []prometheus.Collector{
+		// 	prometheus.NewGaugeVec(
+		// 		prometheus.GaugeOpts{
+		// 			Namespace: Namespace,
+		// 			Subsystem: processesSubsystem,
+		// 			Name:      "memory_resident_usage_bytes",
+		// 			Help:      "Resident memory size in bytes",
+		// 		},
+		// 		processesLabelNames,
+		// 	),
+		// 	prometheus.NewGaugeVec(
+		// 		prometheus.GaugeOpts{
+		// 			Namespace: Namespace,
+		// 			Subsystem: processesSubsystem,
+		// 			Name:      "cpu_usage_total_seconds",
+		// 			Help:      "Total CPU user and system time in seconds",
+		// 		},
+		// 		processesLabelNames,
+		// 	),
+		// },
+		memory: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: Namespace,
+				Subsystem: processesSubsystem,
+				Name:      "memory_resident_usage_bytes",
+				Help:      "Resident memory size in bytes",
+			},
+			processesLabelNames,
+		),
+		cpu: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Namespace: Namespace,
+				Subsystem: processesSubsystem,
+				Name:      "cpu_usage_total_seconds",
+				Help:      "Total CPU user and system time in seconds",
+			},
+			processesLabelNames,
+		),
 	}, nil
 }
 
@@ -55,9 +74,12 @@ func (c *processesCollector) Update(ch chan<- prometheus.Metric) error {
 		return fmt.Errorf("failed to get processes: %s", err)
 	}
 
-	for _, metric := range c.metrics {
-		metric.(*prometheus.GaugeVec).Reset()
-	}
+	c.memory.Reset()
+	c.cpu.Reset()
+
+	// for _, metric := range c.metrics {
+	// 	metric.(*prometheus.GaugeVec).Reset()
+	// }
 
 	for _, process := range processes {
 		cmd, err := process.Comm()
@@ -78,13 +100,19 @@ func (c *processesCollector) Update(ch chan<- prometheus.Metric) error {
 			continue
 		}
 
-		c.metrics[0].(*prometheus.GaugeVec).WithLabelValues(cmd).Set(float64(stats.ResidentMemory()))
-		c.metrics[1].(*prometheus.GaugeVec).WithLabelValues(cmd).Set(stats.CPUTime())
+		c.memory.WithLabelValues(cmd).Set(float64(stats.ResidentMemory()))
+		c.cpu.WithLabelValues(cmd).Set(stats.CPUTime())
+
+		// c.metrics[0].(*prometheus.GaugeVec).WithLabelValues(cmd).Set(float64(stats.ResidentMemory()))
+		// c.metrics[1].(*prometheus.GaugeVec).WithLabelValues(cmd).Set(stats.CPUTime())
 	}
 
-	for _, c := range c.metrics {
-		c.Collect(ch)
-	}
+	c.memory.Collect(ch)
+	c.cpu.Collect(ch)
+
+	// for _, c := range c.metrics {
+	// 	c.Collect(ch)
+	// }
 
 	return err
 }
