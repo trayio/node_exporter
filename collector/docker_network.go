@@ -86,14 +86,14 @@ func (c dockerNetworkCollector) Update(ch chan<- prometheus.Metric) error {
 		log.Debugf("inspecting container %s", name)
 		inspect, err := c.client.InspectContainer(container.ID)
 		if err != nil {
-			log.Debugf("failed to inspect container %s", name)
+			log.Debugf("failed to inspect container %s: %s", name, err)
 			continue
 		}
 
 		log.Debugf("adding network metrics for container %s", name)
 		network, err := getContainerNetworkInfo(inspect.State)
 		if err != nil {
-			log.Debugf("failed to collect netowkr metrics for containers %s", name)
+			log.Debugf("failed to collect network metrics for containers %s: %s", name, err)
 			continue
 		}
 
@@ -115,7 +115,7 @@ func (c dockerNetworkCollector) Update(ch chan<- prometheus.Metric) error {
 }
 
 func getContainerNetworkInfo(state docker.State) (network, error) {
-	file, err := os.Open(procFilePath(fmt.Sprintf("%s/net/dev", state.Pid)))
+	file, err := os.Open(procFilePath(fmt.Sprintf("%d/net/dev", state.Pid)))
 	if err != nil {
 		return nil, err
 	}
@@ -172,8 +172,6 @@ func parseContainerNetworkInfo(r io.Reader) (network, error) {
 			}
 		}
 	}
-
-	fmt.Println(iface)
 
 	return iface, nil
 }

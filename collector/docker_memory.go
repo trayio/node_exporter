@@ -67,7 +67,7 @@ func (c *dockerMemoryCollector) Update(ch chan<- prometheus.Metric) error {
 		log.Debugf("adding memory metrics for container %s", name)
 		mem, err := getContainerMemoryInfo(container.ID)
 		if err != nil {
-			log.Debugf("failed to collect memory metrics for container %s", name)
+			log.Debugf("failed to collect memory metrics for container %s: %s", name, err)
 			continue
 		}
 
