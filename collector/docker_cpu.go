@@ -78,7 +78,12 @@ func (c *dockerCpuCollector) Update(ch chan<- prometheus.Metric) error {
 }
 
 func getContainerCpuInfo(id string) (float64, error) {
-	file, err := os.Open(sysFilePath(fmt.Sprintf("fs/cgroup/cpuacct/docker/%s/cpuacct.usage", id)))
+	f, err := findDockerCpuStatsFile(id)
+	if err != nil {
+		return 0, err
+	}
+
+	file, err := os.Open(f)
 	if err != nil {
 		return 0, err
 	}
@@ -108,4 +113,19 @@ func parseContainerCpuInfo(r io.Reader) (float64, error) {
 	}
 
 	return usage, nil
+}
+
+func findDockerCpuStatsFile(id string) (string, error) {
+	var files = []string{
+		sysFilePath(fmt.Sprintf("fs/cgroup/cpuacct/docker/%s/cpuacct.usage", id)),
+		sysFilePath(fmt.Sprintf("fs/cgroup/cpuacct/system.slice/docker-%s.scope/cpuacct.usage", id)),
+	}
+
+	for _, file := range files {
+		if _, err := os.Stat(file); err == nil {
+			return file, err
+		}
+	}
+
+	return "", fmt.Errorf("failed to find CPU stats file for container %s", id)
 }

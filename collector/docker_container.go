@@ -34,7 +34,7 @@ func NewDockerContainerCollector() (Collector, error) {
 				Namespace: Namespace,
 				Subsystem: dockerContainerSubsystem,
 				Name:      "containers",
-				Help:      "nothing yet",
+				Help:      "Running Docker containers",
 			},
 			labels,
 		),

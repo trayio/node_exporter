@@ -80,7 +80,12 @@ func (c *dockerMemoryCollector) Update(ch chan<- prometheus.Metric) error {
 }
 
 func getContainerMemoryInfo(id string) (memoryStatistics, error) {
-	file, err := os.Open(sysFilePath(fmt.Sprintf("fs/cgroup/memory/docker/%s/memory.stat", id)))
+	f, err := findDockerMemoryStatsFile(id)
+	if err != nil {
+		return nil, err
+	}
+
+	file, err := os.Open(f)
 	if err != nil {
 		return nil, err
 	}
@@ -116,4 +121,19 @@ func parseContainerMemoryInfo(r io.Reader) (memoryStatistics, error) {
 
 func containerMemoryUsageBytes(m memoryStatistics) float64 {
 	return m["rss"] + m["cache"]
+}
+
+func findDockerMemoryStatsFile(id string) (string, error) {
+	var files = []string{
+		sysFilePath(fmt.Sprintf("fs/cgroup/memory/docker/%s/memory.stat", id)),
+		sysFilePath(fmt.Sprintf("fs/cgroup/memory/system.slice/docker-%s.scope/memory.stat", id)),
+	}
+
+	for _, file := range files {
+		if _, err := os.Stat(file); err == nil {
+			return file, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to find memory stats file for containers %s", id)
 }
